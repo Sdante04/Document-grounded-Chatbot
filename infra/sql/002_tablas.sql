@@ -58,14 +58,16 @@ CREATE TABLE IF NOT EXISTS users (
   email          VARCHAR(254)    NOT NULL,
   password_hash  VARCHAR(255)    NOT NULL,
   full_name      VARCHAR(160)            NULL,
-  is_active      TINYINT(1)      NOT NULL DEFAULT 1,
+  is_active      TINYINT UNSIGNED NOT NULL DEFAULT 1,
   created_at     TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   updated_at     TIMESTAMP(6)             NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_tenant_email (tenant_id, email),
   CONSTRAINT fk_users_tenant
     FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-    ON DELETE CASCADE ON UPDATE RESTRICT
+    ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT chk_users_is_active
+    CHECK (is_active IN (0,1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS roles (
@@ -105,20 +107,22 @@ CREATE TABLE IF NOT EXISTS tenant_settings (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS knowledge_bases (
-  id                    BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  tenant_id             BIGINT UNSIGNED NOT NULL,
-  name                  VARCHAR(128)    NOT NULL,
-  description           TEXT                     NULL,
+  id                     BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  tenant_id              BIGINT UNSIGNED NOT NULL,
+  name                   VARCHAR(128)    NOT NULL,
+  description            TEXT                     NULL,
   openai_vector_store_id VARCHAR(128)            NULL,
-  is_default            TINYINT(1)      NOT NULL DEFAULT 0,
-  created_at            TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-  updated_at            TIMESTAMP(6)             NULL ON UPDATE CURRENT_TIMESTAMP(6),
+  is_default             TINYINT UNSIGNED NOT NULL DEFAULT 0,
+  created_at             TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  updated_at             TIMESTAMP(6)             NULL ON UPDATE CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   UNIQUE KEY uq_kb_tenant_name (tenant_id, name),
   UNIQUE KEY uq_kb_openai_vector_store_id (openai_vector_store_id),
   CONSTRAINT fk_kb_tenant
     FOREIGN KEY (tenant_id) REFERENCES tenants(id)
-    ON DELETE CASCADE ON UPDATE RESTRICT
+    ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT chk_kb_is_default
+    CHECK (is_default IN (0,1))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS kb_settings (
@@ -196,14 +200,14 @@ CREATE TABLE IF NOT EXISTS chat_sessions (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS chat_messages (
-  id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-  chat_session_id  BIGINT UNSIGNED NOT NULL,
-  role             ENUM('user','assistant','system') NOT NULL,
-  content          LONGTEXT        NOT NULL,
-  openai_response_id VARCHAR(128)           NULL,
-  tokens_in        INT UNSIGNED             NULL,
-  tokens_out       INT UNSIGNED             NULL,
-  created_at       TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+  id                 BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  chat_session_id    BIGINT UNSIGNED NOT NULL,
+  role               ENUM('user','assistant','system') NOT NULL,
+  content            LONGTEXT        NOT NULL,
+  openai_response_id VARCHAR(128)             NULL,
+  tokens_in          INT UNSIGNED             NULL,
+  tokens_out         INT UNSIGNED             NULL,
+  created_at         TIMESTAMP(6)    NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   PRIMARY KEY (id),
   CONSTRAINT fk_chat_messages_session
     FOREIGN KEY (chat_session_id) REFERENCES chat_sessions(id)
